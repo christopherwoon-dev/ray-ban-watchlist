@@ -5,6 +5,13 @@
 // screens/rendering/focus, matching the real hardware's D-pad-only input
 // model (no touch/mouse — confirmed against display-guidelines.md in the
 // cloned toolkit repo).
+//
+// The Add Ticker screen uses a plain <input> (see vanilla-patterns.md's
+// "Form Screen" pattern) rather than anything custom — the glasses OS
+// attaches its own text-entry modality (Neural Band handwriting, dictation,
+// etc.) to any focused HTML text input, the same way a phone's keyboard
+// appears for a focused <input> in a mobile browser. There's no separate
+// JS API for it.
 
 (function () {
   'use strict';
@@ -195,6 +202,49 @@
         renderHome();
         saveWatchlist();
         break;
+      case 'remove-ticker':
+        state.watchlist.splice(state.currentIdx, 1);
+        state.currentIdx = null;
+        buildDisplay();
+        renderHome();
+        saveWatchlist();
+        navigateBack();
+        break;
+      case 'go-add-ticker': {
+        var input = document.getElementById('new-ticker-input');
+        input.value = '';
+        document.getElementById('add-ticker-hint').textContent = '';
+        navigateTo('add-ticker');
+        break;
+      }
+      case 'save-ticker':
+        addTicker();
+        break;
+    }
+  }
+
+  async function addTicker() {
+    var input = document.getElementById('new-ticker-input');
+    var hint = document.getElementById('add-ticker-hint');
+    var raw = input.value.trim().toUpperCase();
+    if (!raw) return;
+    if (state.watchlist.some(function (w) { return w.symbol === raw; })) {
+      hint.textContent = raw + ' is already on your watchlist.';
+      return;
+    }
+    hint.textContent = 'Adding ' + raw + '…';
+    try {
+      state.watchlist.push({ symbol: raw, muted: false });
+      var quote = await fetchQuote(raw, state.tick);
+      var articles = await fetchHeadlines(raw, state.tick);
+      state.rawCache[raw] = { quote: quote, articles: articles };
+      buildDisplay();
+      renderHome();
+      await saveWatchlist();
+      navigateBack();
+    } catch (e) {
+      state.watchlist.pop();
+      hint.textContent = 'Could not add ' + raw + ': ' + e.message;
     }
   }
 
@@ -206,14 +256,26 @@
     });
 
     document.addEventListener('keydown', function (e) {
+      var active = document.activeElement;
+      var isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+
+      // While a text field is focused, only Enter/Escape are intercepted —
+      // everything else (typing, and whatever native input modality the
+      // glasses OS attaches to a focused <input> — dictation, handwriting
+      // via the Neural Band, etc.) is left to the browser/OS to handle.
+      if (isInput && e.key !== 'Enter' && e.key !== 'Escape') return;
+
       switch (e.key) {
         case 'ArrowUp': moveFocus('up'); e.preventDefault(); break;
         case 'ArrowDown': moveFocus('down'); e.preventDefault(); break;
         case 'ArrowLeft': moveFocus('left'); e.preventDefault(); break;
         case 'ArrowRight': moveFocus('right'); e.preventDefault(); break;
         case 'Enter':
-          if (document.activeElement && document.activeElement.classList.contains('focusable')) {
-            document.activeElement.click();
+          if (isInput) {
+            var submitAction = active.dataset.submitAction;
+            if (submitAction) handleAction(submitAction, active);
+          } else if (active && active.classList.contains('focusable')) {
+            active.click();
           }
           e.preventDefault();
           break;

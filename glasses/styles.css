@@ -137,6 +137,33 @@ body {
   font-family: 'IBM Plex Mono', monospace;
 }
 .nav-item.muted-state { color: var(--text-muted); }
+.nav-item.primary { background: var(--accent-primary); color: #000; }
+.nav-item.danger { background: var(--danger); color: #fff; }
+
+.form-field { margin-bottom: 16px; }
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+}
+.text-input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 18px;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+}
+.text-input::placeholder { color: var(--text-muted); text-transform: none; }
+.form-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-height: 18px;
+}
 
 .list-container { display: flex; flex-direction: column; gap: 8px; }
 .list-item {

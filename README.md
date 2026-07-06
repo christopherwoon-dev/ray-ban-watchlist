@@ -3,10 +3,13 @@
 Two separate webapps sharing one backend:
 
 - **`/` (this folder)** — phone/browser edit page. Add/remove tickers.
-- **`/glasses/`** — the actual Meta Ray-Ban Display webapp. Read-only,
-  D-pad navigable, built against the real
+- **`/glasses/`** — the actual Meta Ray-Ban Display webapp. D-pad navigable,
+  built against the real
   [meta-wearables-webapp](https://github.com/facebookincubator/meta-wearables-webapp)
   toolkit (cloned and inspected directly — see "Toolkit compliance" below).
+  Full parity with the phone page: add, remove, mute, view catalyst headlines
+  — all D-pad/focus navigable, using a standard `<input>` for the Add Ticker
+  screen (see "Text entry on glasses" below) rather than a read-only view.
 
 Both talk to the same `/api/watchlist`, `/api/quote`, `/api/news` backend, so
 edits made on the phone page show up in the glasses app immediately.
@@ -53,6 +56,24 @@ mismatches:
 surfaces (`glasses/index.html` loads them via `../`) — only the UI/interaction
 layer differs.
 
+## Text entry on glasses (Add Ticker)
+
+The Add Ticker screen (`glasses/index.html`) uses a plain
+`<input type="text" class="text-input focusable">`, following the toolkit's
+own "Form Screen" pattern (`skills/add-ui/references/vanilla-patterns.md`).
+There is no separate JS API for the Neural Band's handwriting input — the
+glasses OS attaches its own text-entry modality (handwriting, dictation,
+whatever it supports) to any focused HTML text input automatically, the same
+way a phone browser's native keyboard appears for a focused `<input>`. This
+app's job is just to provide a standard, correctly-focusable input; the
+actual handwriting recognition itself isn't something testable from a
+desktop browser preview — only confirmable on the physical hardware.
+
+While the input is focused, arrow keys are left alone (so typing/cursor
+movement isn't hijacked by D-pad focus-navigation) — only Enter (submit,
+via `data-submit-action`) and Escape (cancel) are intercepted, matching the
+toolkit template's own keydown handling.
+
 ## What's implemented
 
 - **Catalyst scoring** (`scoring.js`): category weight (earnings/guidance/M&A/
@@ -60,7 +81,7 @@ layer differs.
   (price change ≥ 1.5%), matching the framework style used by the
   `swing-trade-architect` / `daily-catalyst-scanner` skills. The `CATALYST`
   tag only appears above a threshold score.
-- Default 19-ticker watchlist, plus ad-hoc ticker add (phone page only).
+- Default 19-ticker watchlist, plus ad-hoc ticker add/remove on both surfaces.
 - **Real data, no API keys**: prices and headlines both from Yahoo Finance's
   public (unofficial) endpoints — see `api/_shared.py`. Google News RSS was
   tried first for headlines and works from a normal IP, but Google blocks
