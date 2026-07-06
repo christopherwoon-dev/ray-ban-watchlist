@@ -2,17 +2,16 @@
 # this folder (quote.py, news.py) and the local dev server (../devserver.py)
 # so there's a single source of truth for how real data is fetched/parsed.
 #
-# Prices: Yahoo Finance's public chart endpoint (unofficial, no key).
-# News: Google News RSS, scoped per ticker (their feed's own terms limit
-# this to personal, non-commercial use in a feed reader — fine for a
-# personal watchlist app, not for redistributing/monetizing the output).
+# Prices and news both come from Yahoo Finance's public (unofficial, no key)
+# endpoints. Google News RSS was tried first for headlines and works fine
+# from a normal residential/sandbox IP, but Google's anti-bot layer
+# consistently 503s requests from Vercel's Lambda IP ranges — Yahoo's own
+# news search endpoint doesn't have that problem, so it's used for both.
 
 import json
 import urllib.parse
 import urllib.request
-from email.utils import parsedate_to_datetime
 from datetime import datetime, timezone
-import xml.etree.ElementTree as ET
 
 USER_AGENT = 'Mozilla/5.0 (compatible; ray-ban-watchlist/1.0)'
 
@@ -51,29 +50,19 @@ def get_quote(symbol):
 
 
 def get_news(symbol, limit=3):
-    query = urllib.parse.quote(f'{symbol} stock')
-    url = f'https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en'
-    raw = _get(url)
-    root = ET.fromstring(raw)
-    items = root.findall('.//item')[:limit]
+    url = f'https://query2.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(symbol)}&newsCount={limit}&quotesCount=0'
+    data = json.loads(_get(url))
     now = datetime.now(timezone.utc)
     results = []
-    for item in items:
-        raw_title = (item.findtext('title') or '').strip()
-        if ' - ' in raw_title:
-            text, source = raw_title.rsplit(' - ', 1)
-        else:
-            text, source = raw_title, 'Google News'
-        pub_date = item.findtext('pubDate')
+    for item in data.get('news', [])[:limit]:
+        text = item.get('title', '')
+        publish_ts = item.get('providerPublishTime')
         minutes_ago = 0
-        if pub_date:
-            try:
-                dt = parsedate_to_datetime(pub_date)
-                minutes_ago = max(0, int((now - dt).total_seconds() / 60))
-            except (TypeError, ValueError):
-                minutes_ago = 0
+        if publish_ts:
+            dt = datetime.fromtimestamp(publish_ts, tz=timezone.utc)
+            minutes_ago = max(0, int((now - dt).total_seconds() / 60))
         results.append({
-            'source': source,
+            'source': item.get('publisher', 'Yahoo Finance'),
             'minutesAgo': minutes_ago,
             'text': text,
             'category': categorize(text),
