@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ray-Ban Display — Stock Watchlist</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="page-title">Ray-Ban Display — Stock Watchlist</div>
+
+  <div class="surfaces">
+    <div class="surface-col">
+      <div class="surface-label"><span class="badge-dot edit"></span><span class="edit-badge">PHONE / WEB — EDIT SURFACE</span></div>
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-header">
+          <h1>Watchlist</h1>
+          <p>Tap × to remove · add a ticker below</p>
+        </div>
+        <div class="phone-list" id="phoneList"></div>
+        <div class="phone-add">
+          <input type="text" id="tickerInput" placeholder="Add ticker, e.g. SNDK" maxlength="6" />
+          <button id="addBtn" disabled>ADD</button>
+        </div>
+        <div class="sync-note" id="syncNote"></div>
+      </div>
+    </div>
+
+    <div class="surface-col">
+      <div class="surface-label"><span class="badge-dot ro"></span><span class="ro-badge">GLASSES — READ-ONLY DISPLAY</span></div>
+      <div class="lens">
+        <div class="lens-status">
+          <div class="live"><span class="lens-dot"></span>WATCHLIST · LIVE</div>
+          <div id="clock"></div>
+        </div>
+        <div class="view-stack">
+          <div class="view list-view" id="listView"></div>
+          <div class="view detail-view" id="detailView"></div>
+        </div>
+        <div class="lens-gesture" id="gestureBar">
+          <span>◐ swipe — scroll</span>
+          <span><b>tap</b> — expand</span>
+          <span>hold — mute</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="storage.js"></script>
+<script src="scoring.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
