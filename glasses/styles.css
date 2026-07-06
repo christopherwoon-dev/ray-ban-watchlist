@@ -6,18 +6,23 @@
    ticker prices/CATALYST tags to keep this app's brand identity. */
 
 :root {
-  --bg-primary: #000000;   /* transparent on additive display */
-  --bg-secondary: #0a0a0f;
-  --bg-tertiary: #14141f;
-  --bg-card: #1a1a2e;
+  --bg-primary: #000000;   /* transparent on additive display — must stay pure black, do not change */
+  /* Surface colors brightened well past the toolkit template's defaults —
+     on an additive waveguide display, darker = more transparent/invisible,
+     so near-black surfaces (#0a0a0f/#14141f) read as washed out no matter
+     how bright the display itself is set. These need real luminance to be
+     legible at all, not just aesthetic contrast. */
+  --bg-secondary: #24262e;
+  --bg-tertiary: #34363f;
+  --bg-card: #3d3f4c;
   --text-primary: #ffffff;
-  --text-secondary: #a0a0b0;
-  --text-muted: #606070;
+  --text-secondary: #d5d6dd;
+  --text-muted: #9698a3;
   --accent-primary: #FFB300;      /* brand amber — prices, CATALYST tag */
   --focus-ring: #00d4ff;           /* mandated cyan focus glow, do not change */
-  --focus-glow: rgba(0, 212, 255, 0.4);
-  --green: #3ddc84;
-  --red: #ff5c5c;
+  --focus-glow: rgba(0, 212, 255, 0.55);
+  --green: #4eeb9c;
+  --red: #ff7a7a;
   --danger: #ff4466;
   --radius-sm: 8px;
   --radius-md: 12px;
