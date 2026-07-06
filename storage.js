@@ -1,33 +1,36 @@
-// Shared watchlist storage. Uses the Meta Wearables Device Access Toolkit's
-// window.storage bridge when present (so phone and glasses read/write the
-// same state); falls back to localStorage for plain-browser testing.
+// Shared watchlist storage — backed by /api/watchlist (Vercel + Upstash
+// Redis) so the phone edit page and the glasses app, which run in separate
+// browser contexts, see the same state. There is no window.storage bridge
+// in the real Meta Wearables toolkit (confirmed against the actual SDK) —
+// it uses plain localStorage per-device, which can't sync across surfaces
+// on its own. localStorage here is only a last-resort offline fallback if
+// the network call fails; it is NOT synced across devices in that case.
 
 async function storageGet(key) {
-  if (window.storage && typeof window.storage.get === 'function') {
-    try {
-      const result = await window.storage.get(key, false);
-      return result ? JSON.parse(result.value) : null;
-    } catch (e) {
-      return null;
-    }
+  try {
+    const res = await fetch('/api/watchlist');
+    if (!res.ok) throw new Error(`watchlist ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    return data.watchlist ?? null;
+  } catch (e) {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
   }
-  const raw = localStorage.getItem(key);
-  return raw ? JSON.parse(raw) : null;
 }
 
 async function storageSet(key, value) {
-  if (window.storage && typeof window.storage.set === 'function') {
-    try {
-      await window.storage.set(key, JSON.stringify(value), false);
-      return true;
-    } catch (e) {
-      // fall through to localStorage
-    }
-  }
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    const res = await fetch('/api/watchlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ watchlist: value }),
+    });
+    if (!res.ok) throw new Error(`watchlist ${res.status}`);
+    localStorage.setItem(key, JSON.stringify(value)); // offline fallback cache
     return true;
   } catch (e) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* ignore */ }
     return false;
   }
 }

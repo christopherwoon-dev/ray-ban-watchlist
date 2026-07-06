@@ -9,11 +9,18 @@
 # news search endpoint doesn't have that problem, so it's used for both.
 
 import json
+import os
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
 USER_AGENT = 'Mozilla/5.0 (compatible; ray-ban-watchlist/1.0)'
+
+WATCHLIST_KEY = 'mrbd:watchlist'
+DEFAULT_TICKERS = [
+    'ARM', 'AMD', 'INTC', 'AVGO', 'MU', 'CRWD', 'TSM', 'NFLX', 'NVDA', 'PANW',
+    'QCOM', 'AAPL', 'MSFT', 'SNOW', 'PLTR', 'AMZN', 'GOOGL', 'TSLA', 'META',
+]
 
 CATEGORY_KEYWORDS = {
     'earnings': ['earnings', 'quarterly results', 'eps ', 'revenue beat', 'revenue miss'],
@@ -68,3 +75,41 @@ def get_news(symbol, limit=3):
             'category': categorize(text),
         })
     return results
+
+
+# ==================== SHARED WATCHLIST (Upstash Redis via REST API) ====================
+# Backs the watchlist behind /api/watchlist so the phone edit page and the
+# glasses app — separate browser contexts that can't share localStorage —
+# see the same state. Uses Upstash's REST API (KV_REST_API_URL/TOKEN, the
+# env vars Vercel injects once the database is connected to the project)
+# rather than the redis:// protocol, so no extra pip dependency is needed.
+
+def _kv_config():
+    url = os.environ.get('KV_REST_API_URL')
+    token = os.environ.get('KV_REST_API_TOKEN')
+    if not url or not token:
+        raise RuntimeError('KV_REST_API_URL/KV_REST_API_TOKEN not configured')
+    return url, token
+
+
+def _kv_request(method, path, body=None):
+    url, token = _kv_config()
+    data = body.encode() if isinstance(body, str) else body
+    req = urllib.request.Request(
+        url.rstrip('/') + path, data=data, method=method,
+        headers={'Authorization': f'Bearer {token}'},
+    )
+    with urllib.request.urlopen(req, timeout=6) as resp:
+        return json.loads(resp.read())
+
+
+def get_watchlist():
+    result = _kv_request('GET', f'/get/{WATCHLIST_KEY}')
+    raw = result.get('result')
+    if raw:
+        return json.loads(raw)
+    return [{'symbol': s, 'muted': False} for s in DEFAULT_TICKERS]
+
+
+def set_watchlist(watchlist):
+    _kv_request('POST', f'/set/{WATCHLIST_KEY}', body=json.dumps(watchlist))

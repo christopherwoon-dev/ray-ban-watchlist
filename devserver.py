@@ -11,9 +11,24 @@ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'api'))
-from _shared import get_quote, get_news  # noqa: E402
+from _shared import get_quote, get_news, get_watchlist, set_watchlist  # noqa: E402
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_dotenv(path):
+    if not os.path.exists(path):
+        return
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, _, value = line.partition('=')
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_dotenv(os.path.join(ROOT, '.env.local'))
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -47,7 +62,28 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json({'error': str(e)}, 502)
             return
 
+        if parsed.path == '/api/watchlist':
+            try:
+                self._send_json({'watchlist': get_watchlist()})
+            except Exception as e:
+                self._send_json({'error': str(e)}, 502)
+            return
+
         super().do_GET()
+
+    def do_POST(self):
+        if urlparse(self.path).path == '/api/watchlist':
+            length = int(self.headers.get('Content-Length', 0) or 0)
+            raw = self.rfile.read(length) if length else b'{}'
+            try:
+                payload = json.loads(raw)
+                set_watchlist(payload.get('watchlist', []))
+                self._send_json({'ok': True})
+            except Exception as e:
+                self._send_json({'error': str(e)}, 502)
+            return
+        self.send_response(404)
+        self.end_headers()
 
 
 if __name__ == '__main__':
