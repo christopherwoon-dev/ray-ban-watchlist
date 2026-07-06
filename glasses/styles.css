@@ -58,9 +58,9 @@ body {
   gap: 12px;
   flex-shrink: 0;
 }
-.header h1 { font-size: 22px; font-weight: 600; flex: 1; }
+.header h1 { font-size: 26px; font-weight: 600; flex: 1; }
 .header-meta {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-secondary);
   font-family: 'IBM Plex Mono', monospace;
   display: flex;
@@ -127,11 +127,11 @@ body {
 }
 .nav-item {
   flex: 1;
-  padding: 14px 16px;
+  padding: 16px 16px;
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
   text-align: center;
   font-family: 'IBM Plex Mono', monospace;
@@ -150,8 +150,8 @@ body {
 }
 .text-input {
   width: 100%;
-  padding: 14px 16px;
-  font-size: 18px;
+  padding: 16px 16px;
+  font-size: 22px;
   font-family: 'IBM Plex Mono', monospace;
   text-transform: uppercase;
   background: var(--bg-tertiary);
@@ -165,27 +165,27 @@ body {
   min-height: 18px;
 }
 
-.list-container { display: flex; flex-direction: column; gap: 8px; }
+.list-container { display: flex; flex-direction: column; gap: 10px; }
 .list-item {
   display: flex;
   align-items: center;
-  padding: 14px 16px;
+  padding: 20px 18px;
   background: var(--bg-tertiary);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  gap: 12px;
+  gap: 14px;
 }
 .list-item.is-muted { opacity: .45; }
 .list-item-content { flex: 1; min-width: 0; }
 .list-item-title {
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 22px;
 }
 .list-item-meta {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-top: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -196,18 +196,18 @@ body {
   align-items: flex-end;
   font-family: 'IBM Plex Mono', monospace;
   flex-shrink: 0;
-  gap: 4px;
+  gap: 5px;
 }
-.list-item-price { font-size: 15px; }
-.list-item-change { font-size: 13px; font-weight: 600; }
+.list-item-price { font-size: 19px; }
+.list-item-change { font-size: 16px; font-weight: 600; }
 .change-up { color: var(--green); }
 .change-down { color: var(--red); }
 
 .badge {
   display: inline-block;
-  padding: 3px 8px;
+  padding: 4px 9px;
   border-radius: 20px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -219,21 +219,33 @@ body {
 
 .article-list { display: flex; flex-direction: column; gap: 10px; }
 .article {
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-radius: var(--radius-md);
   background: var(--bg-tertiary);
 }
-.article.top { border: 2px solid var(--accent-primary); }
+/* Top-ranked article is distinguished by a label, not a border — a colored
+   border reads as a focus/selection state and confused users into thinking
+   the (non-interactive) article card was clickable. */
 .article-meta {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 4px;
+  align-items: center;
+  margin-bottom: 5px;
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
 }
-.article-source { color: var(--accent-primary); text-transform: uppercase; letter-spacing: .04em; }
+.article-source { color: var(--accent-primary); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }
 .article-time { color: var(--text-secondary); }
-.article-text { font-size: 14px; line-height: 1.4; color: var(--text-primary); }
+.article-text { font-size: 17px; line-height: 1.4; color: var(--text-primary); }
+.top-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  background: var(--accent-primary);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
 
 .loading-container {
   display: flex;

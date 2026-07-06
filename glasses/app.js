@@ -169,8 +169,8 @@
 
     var list = document.getElementById('articleList');
     list.innerHTML = d.articles.map(function (a) {
-      return '<div class="article' + (a.top ? ' top' : '') + '">' +
-        '<div class="article-meta"><span class="article-source">' + escapeHtml(a.source) + '</span>' +
+      return '<div class="article">' +
+        '<div class="article-meta"><span class="article-source">' + (a.top ? '<span class="top-label">TOP</span>' : '') + escapeHtml(a.source) + '</span>' +
         '<span class="article-time">' + formatAge(a.minutesAgo) + '</span></div>' +
         '<div class="article-text">' + escapeHtml(a.text) + '</div></div>';
     }).join('') || '<div class="empty-state">No headlines.</div>';
