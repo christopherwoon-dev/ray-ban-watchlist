@@ -1,0 +1,243 @@
+/* Base theme + focus system copied from the real Meta Wearables toolkit's
+   create-webapp template (plugins/meta-wearables-webapp/skills/create-webapp/
+   templates/styles.css) — these values (600x600 viewport, #000 transparent
+   background, cyan focus ring) are hardware/legibility requirements from
+   display-guidelines.md, not stylistic choices. Amber is layered on top for
+   ticker prices/CATALYST tags to keep this app's brand identity. */
+
+:root {
+  --bg-primary: #000000;   /* transparent on additive display */
+  --bg-secondary: #0a0a0f;
+  --bg-tertiary: #14141f;
+  --bg-card: #1a1a2e;
+  --text-primary: #ffffff;
+  --text-secondary: #a0a0b0;
+  --text-muted: #606070;
+  --accent-primary: #FFB300;      /* brand amber — prices, CATALYST tag */
+  --focus-ring: #00d4ff;           /* mandated cyan focus glow, do not change */
+  --focus-glow: rgba(0, 212, 255, 0.4);
+  --green: #3ddc84;
+  --red: #ff5c5c;
+  --danger: #ff4466;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  width: 600px;
+  height: 600px;
+  overflow: hidden;
+}
+
+#app { width: 100%; height: 100%; position: relative; }
+
+.screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 8px; /* 8dp safe margin */
+}
+.screen.hidden { display: none; }
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  gap: 12px;
+  flex-shrink: 0;
+}
+.header h1 { font-size: 22px; font-weight: 600; flex: 1; }
+.header-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: 'IBM Plex Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-primary);
+  box-shadow: 0 0 6px var(--accent-primary);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.back-btn {
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 22px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+}
+
+.content {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+/* Scrim: signals more content exists below the fold */
+.content::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 48px;
+  background: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.focusable {
+  transition: transform 475ms cubic-bezier(0.6, 0, 0.4, 1), border-color 300ms, box-shadow 300ms;
+  border: 2px solid transparent;
+  cursor: pointer;
+  min-height: 44px;
+}
+.focusable:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 20px var(--focus-glow);
+  transform: scale(0.91); /* container-only scale on focus, per spec */
+}
+
+.nav-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+.nav-item {
+  flex: 1;
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.nav-item.muted-state { color: var(--text-muted); }
+
+.list-container { display: flex; flex-direction: column; gap: 8px; }
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  gap: 12px;
+}
+.list-item.is-muted { opacity: .45; }
+.list-item-content { flex: 1; min-width: 0; }
+.list-item-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
+  font-size: 16px;
+}
+.list-item-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.list-item-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-family: 'IBM Plex Mono', monospace;
+  flex-shrink: 0;
+  gap: 4px;
+}
+.list-item-price { font-size: 15px; }
+.list-item-change { font-size: 13px; font-weight: 600; }
+.change-up { color: var(--green); }
+.change-down { color: var(--red); }
+
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--accent-primary);
+  color: #000;
+  flex-shrink: 0;
+}
+
+.article-list { display: flex; flex-direction: column; gap: 10px; }
+.article {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+}
+.article.top { border: 2px solid var(--accent-primary); }
+.article-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+}
+.article-source { color: var(--accent-primary); text-transform: uppercase; letter-spacing: .04em; }
+.article-time { color: var(--text-secondary); }
+.article-text { font-size: 14px; line-height: 1.4; color: var(--text-primary); }
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+  background: var(--bg-primary);
+}
+.loading-spinner {
+  width: 40px; height: 40px;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--text-secondary); }
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 20px;
+}
+
+.hidden { display: none !important; }

@@ -38,6 +38,14 @@ body {
   text-align: center;
 }
 
+.page-sub {
+  color: var(--grey);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  text-align: center;
+}
+.page-sub a { color: var(--amber); }
+
 .surfaces {
   display: flex;
   gap: 40px;
@@ -57,10 +65,8 @@ body {
   gap: 7px;
 }
 .surface-label .edit-badge { color: var(--amber); }
-.surface-label .ro-badge { color: var(--grey); }
 .surface-label .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
 .surface-label .badge-dot.edit { background: var(--amber); }
-.surface-label .badge-dot.ro { background: var(--grey); }
 
 /* ============ PHONE FRAME (edit surface) ============ */
 .phone {
@@ -103,68 +109,3 @@ body {
 .phone-add button:disabled { opacity: .35; cursor: default; }
 
 .sync-note { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #444; text-align: center; height: 14px; flex-shrink: 0; margin-top: 8px; }
-
-/* ============ GLASSES LENS (read-only display) ============ */
-.lens {
-  width: 340px;
-  height: 380px;
-  background: var(--bg);
-  border-radius: 26px;
-  border: 1px solid #222;
-  box-shadow: 0 0 0 6px #050505, 0 0 40px rgba(255,179,0,.05), 0 30px 60px rgba(0,0,0,.6);
-  overflow: hidden;
-  position: relative;
-  padding: 16px 16px 12px;
-  display: flex;
-  flex-direction: column;
-}
-.lens::before {
-  content: "";
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
-  pointer-events: none;
-  z-index: 5;
-}
-.lens-status { display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: var(--grey); letter-spacing: .08em; margin-bottom: 12px; flex-shrink: 0; }
-.lens-status .live { color: var(--amber); display: flex; align-items: center; gap: 6px; }
-.lens-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: pulse 1.8s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
-
-.view-stack { flex: 1; position: relative; overflow: hidden; }
-.view { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 7px; transition: transform .32s cubic-bezier(.4,0,.2,1), opacity .28s ease; overflow-y: auto; }
-.list-view { transform: translateX(0); opacity: 1; }
-.list-view.hidden { transform: translateX(-24px); opacity: 0; pointer-events: none; }
-.detail-view { transform: translateX(24px); opacity: 0; pointer-events: none; }
-.detail-view.active { transform: translateX(0); opacity: 1; pointer-events: auto; }
-
-.lens-card { display: flex; align-items: center; justify-content: space-between; padding: 8px 9px; border-radius: 9px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); flex-shrink: 0; cursor: pointer; transition: background .15s, border-color .15s, opacity .15s; }
-.lens-card:hover { background: rgba(255,179,0,0.04); border-color: var(--amber-dim); }
-.lens-card.muted { opacity: .35; }
-.lens-card .left { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.lens-card .ticker { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: #f2f2f2; }
-.lens-card .headline { font-size: 10px; color: var(--grey); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-.lens-card .right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; padding-left: 8px; }
-.lens-card .price { font-size: 12px; color: #f2f2f2; }
-.lens-card .change { font-size: 10px; font-weight: 600; }
-.lens-tag { font-size: 8px; text-transform: uppercase; letter-spacing: .08em; color: #000; background: var(--amber); padding: 1px 5px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-weight: 700; }
-.lens-empty { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--grey); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-align: center; padding: 16px; }
-
-.detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-shrink: 0; }
-.back-btn { display: flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--amber); letter-spacing: .06em; cursor: pointer; padding: 4px 8px 4px 4px; border-radius: 6px; }
-.back-btn:hover { background: rgba(255,179,0,0.08); }
-.detail-ticker-row { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; flex-shrink: 0; }
-.detail-ticker { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 20px; color: #f2f2f2; }
-.detail-price { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #ccc; }
-.detail-change { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; }
-
-.article-list { flex: 1; display: flex; flex-direction: column; gap: 9px; margin-top: 8px; overflow-y: auto; }
-.article { padding: 8px 9px; border-radius: 9px; background: rgba(255,255,255,0.02); border: 1px solid var(--line); }
-.article.top { border-color: var(--amber-dim); background: rgba(255,179,0,0.04); }
-.article-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
-.article-source { font-size: 9px; color: var(--amber); font-family: 'IBM Plex Mono', monospace; letter-spacing: .06em; text-transform: uppercase; }
-.article-time { font-size: 9px; color: var(--grey); font-family: 'IBM Plex Mono', monospace; }
-.article-text { font-size: 11px; line-height: 1.4; color: #d8d8d8; }
-.rank-badge { font-size: 8px; font-family: 'IBM Plex Mono', monospace; color: #000; background: var(--amber); padding: 0 5px; border-radius: 4px; font-weight: 700; margin-right: 6px; }
-
-.lens-gesture { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--grey); letter-spacing: .05em; flex-shrink: 0; }
-.lens-gesture span b { color: var(--amber); font-weight: 600; }

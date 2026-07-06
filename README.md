@@ -1,8 +1,22 @@
-# Ray-Ban Display Stock Watchlist — webapp
+# Ray-Ban Display Stock Watchlist
 
-Real (runnable) implementation of the two-surface design from `../PROJECT_BRIEF.md`
-and the four reference mockups. Plain HTML/CSS/JS frontend + a small Python
-backend for real data (no Node needed anywhere in this project).
+Two separate webapps sharing one backend:
+
+- **`/` (this folder)** — phone/browser edit page. Add/remove tickers.
+- **`/glasses/`** — the actual Meta Ray-Ban Display webapp. Read-only,
+  D-pad navigable, built against the real
+  [meta-wearables-webapp](https://github.com/facebookincubator/meta-wearables-webapp)
+  toolkit (cloned and inspected directly — see "Toolkit compliance" below).
+
+Both talk to the same `/api/watchlist`, `/api/quote`, `/api/news` backend, so
+edits made on the phone page show up in the glasses app immediately.
+
+There is no `window.storage` bridge or similar SDK-provided sync mechanism —
+that was an assumption from early mockups made before the real toolkit was
+available. The real toolkit gives each surface only plain `localStorage`,
+which can't sync across two separate browser contexts (a phone browser and
+the glasses' own WebView) on its own. `/api/watchlist`, backed by Upstash
+Redis, is what actually makes the two surfaces share state.
 
 ## Run it locally
 
@@ -10,76 +24,70 @@ backend for real data (no Node needed anywhere in this project).
 python devserver.py 8743
 ```
 
-Then open `http://localhost:8743`. This serves the static app *and* the
-`/api/quote` / `/api/news` endpoints (see below) from the same process.
+Then open `http://localhost:8743` (edit page) and `http://localhost:8743/glasses/`
+(the D-pad app — use arrow keys + Enter/Escape to navigate, same as the
+toolkit's own dev-testing instructions).
 
-Do not use plain `python -m http.server` — it can't serve the `/api/*`
-endpoints, so the app will silently fall back to mock data.
+Do not use plain `python -m http.server` — it can't serve `/api/*`, so both
+pages will fall back to defaults/mock data.
+
+To test the real watchlist sync locally (optional): copy `.env.local.example`
+to `.env.local` and fill in `KV_REST_API_URL`/`KV_REST_API_TOKEN` from your
+Vercel project's Environment Variables page.
+
+## Toolkit compliance
+
+`glasses/` was rebuilt against the actual toolkit template
+(`plugins/meta-wearables-webapp/skills/create-webapp/templates/`), not the
+original aesthetic mockups, after cloning the toolkit and finding real
+mismatches:
+
+| Assumption from early mockups | What the real toolkit requires |
+|---|---|
+| Touch: tap to expand, swipe to scroll, hold to mute | No touchscreen at all — D-pad only. Arrow keys move focus (wrap-around), Enter activates, Escape goes back. Mute is a normal focusable button, not a synthetic long-press. |
+| Custom ~340×380px "lens" mockup frame | Fixed 600×600dp viewport, 8dp safe margin |
+| Amber trading-terminal palette throughout | `#000000` transparent page background (mandatory — real world shows through on the additive display), visible UI surfaces in `#0a0a0f`–`#1C1E21`, **cyan focus ring is a hardware/legibility requirement, not a style choice**. Amber is kept for prices/CATALYST tags on top of that base. |
+| `window.storage` bridge for phone↔glasses sync | Plain `localStorage`, no bridge — hence the `/api/watchlist` backend described above |
+
+`data.js`, `scoring.js`, and `storage.js` are shared unmodified between both
+surfaces (`glasses/index.html` loads them via `../`) — only the UI/interaction
+layer differs.
 
 ## What's implemented
 
-- **Two-surface architecture**: phone/web edit view (add/remove tickers) and a
-  glasses read-only lens, both reading/writing the same shared watchlist
-  (`storage.js` — uses the Meta toolkit's `window.storage` bridge when present,
-  falls back to `localStorage` for plain-browser testing).
-- **Tap-to-expand detail view** in the lens: one headline per ticker in the list,
-  tap opens 2-3 ranked articles with a `TOP` badge, tap back to return. Article
-  age is shown as `Xm/Xh/Xd ago`.
-- **Hold-to-mute**: press and hold a lens card (~550ms) to mute a ticker — dims
-  it and suppresses its headline/CATALYST tag, without removing it from the list
-  (edit/remove still only happens on the phone surface).
 - **Catalyst scoring** (`scoring.js`): category weight (earnings/guidance/M&A/
   regulatory/analyst action) × recency decay × a real-move confirmation bonus
   (price change ≥ 1.5%), matching the framework style used by the
-  `swing-trade-architect` / `daily-catalyst-scanner` skills. The `CATALYST` tag
-  only appears above a threshold score.
-- Default 19-ticker watchlist from the brief, plus ad-hoc ticker add.
-- **Real data, no API keys**: prices from Yahoo Finance's public chart endpoint,
-  headlines from Google News RSS, both fetched server-side in `api/_shared.py`
-  (see below) — verified live in-browser with real prices and real headlines.
+  `swing-trade-architect` / `daily-catalyst-scanner` skills. The `CATALYST`
+  tag only appears above a threshold score.
+- Default 19-ticker watchlist, plus ad-hoc ticker add (phone page only).
+- **Real data, no API keys**: prices and headlines both from Yahoo Finance's
+  public (unofficial) endpoints — see `api/_shared.py`. Google News RSS was
+  tried first for headlines and works from a normal IP, but Google blocks
+  Vercel's Lambda IP ranges; Yahoo's own news search endpoint doesn't have
+  that problem.
+- **Shared watchlist sync**: `/api/watchlist` (GET/POST), backed by Upstash
+  Redis via its REST API (`KV_REST_API_URL`/`KV_REST_API_TOKEN`, the env vars
+  Vercel injects once the database is connected to the project).
+- If any live call fails, both pages fall back to mock/default data so the UI
+  never breaks.
 
-## How the real data works
+## Known limitation
 
-`data.js`'s `fetchQuote`/`fetchHeadlines` call `/api/quote?symbol=X` and
-`/api/news?symbol=X`. Those endpoints are implemented once, in
-`api/_shared.py`, and used by two different runners:
+`/api/watchlist`'s POST has no auth — anyone with the deployed URL could
+overwrite the watchlist. Low stakes for a personal ticker list, but worth
+knowing if you ever share the URL.
 
-- **`devserver.py`** (local dev) — a plain Python `http.server` that serves
-  the static files and calls `_shared.py` directly for `/api/*`.
-- **`api/quote.py` / `api/news.py`** — Vercel Python serverless functions
-  (Vercel auto-detects any `api/*.py` exporting a `handler` class — no Node
-  or `vercel.json` needed for this). These import `_shared.py` from the same
-  folder, so the logic is identical to what you tested locally.
+## Remaining step: load onto physical glasses
 
-If a live call fails (offline, rate-limited) or returns nothing, `data.js`
-falls back to the mock generator in `data.js` itself, so the UI never breaks
-— rendering "Loading…" only briefly on first load.
+Everything above is finished, deployed, and tested in a browser (including
+D-pad keyboard navigation). What's left needs the actual hardware, which I
+don't have access to test against:
 
-**Caveat on the news source**: Google's RSS feed terms restrict use to
-personal, non-commercial use in a feed reader. That fits this app (your own
-personal watchlist, run for yourself), but don't repackage/redistribute the
-scraped headlines beyond that.
+1. Enable Developer Mode in the Meta AI app
+2. Use the toolkit's publish skill to generate a QR code from
+   `https://ray-ban-watchlist.vercel.app/glasses/`
+3. Scan it from the glasses
 
-## Remaining steps to actually run this on glasses
-
-Everything above is finished and tested in a browser. What's left needs your
-accounts/hardware, not more app code:
-
-1. **Deploy to Vercel** (or any host that runs Python serverless functions):
-   - Push this `webapp/` folder to a GitHub repo
-   - `vercel` login → import the repo → deploy (it should auto-detect the
-     `api/*.py` functions and serve everything else as static files)
-   - I can walk through this step-by-step once you're ready — I'd need you
-     to run the `vercel` CLI login interactively, since that's a browser/
-     account action I can't do for you.
-2. **Clone the actual toolkit**: `git clone
-   https://github.com/facebookincubator/meta-wearables-webapp.git`, run
-   `./install-skills.sh claude`. This app was built to match that toolkit's
-   `window.storage` shape from the mockups, but hasn't been tested against
-   the real SDK — there may be adjustments once you can see its actual API.
-3. **Load onto glasses**: enable Developer Mode in the Meta AI app, use the
-   toolkit's publish skill to generate a QR code from your deployed URL, scan
-   it from the glasses.
-
-Steps 2-3 need the physical glasses + Meta AI app, which I don't have access
-to test against — happy to debug alongside you once you hit that stage.
+Happy to debug alongside you once you hit that stage — I can't verify
+anything about the actual on-device rendering/gesture behavior from here.

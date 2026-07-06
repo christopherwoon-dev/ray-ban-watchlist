@@ -35,6 +35,12 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
 
+    def end_headers(self):
+        # Static JS/CSS caching bit Claude during dev testing (browser served
+        # a stale app.js across edits) — disable caching entirely for local dev.
+        self.send_header('Cache-Control', 'no-store')
+        super().end_headers()
+
     def _send_json(self, payload, status=200):
         body = json.dumps(payload).encode()
         self.send_response(status)

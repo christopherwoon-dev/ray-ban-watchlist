@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+  <meta name="description" content="Read-only stock watchlist for Meta Ray-Ban Display glasses.">
+  <meta name="mrbd-web-app-capable" content="yes">
+  <title>Watchlist</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <div id="home" class="screen">
+      <header class="header">
+        <h1>Watchlist</h1>
+        <span class="header-meta" id="status-indicator">
+          <span class="live-dot"></span>LIVE
+        </span>
+      </header>
+      <div class="content">
+        <div class="list-container" id="tickerList"></div>
+      </div>
+    </div>
+
+    <div id="detail" class="screen hidden">
+      <header class="header">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1 id="detail-ticker">—</h1>
+        <span class="header-meta" id="detail-change">—</span>
+      </header>
+      <div class="content">
+        <div class="article-list" id="articleList"></div>
+      </div>
+      <nav class="nav-bar">
+        <button class="nav-item focusable" id="mute-btn" data-action="toggle-mute">Mute</button>
+      </nav>
+    </div>
+
+    <div id="loading" class="loading-container hidden">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Loading watchlist…</div>
+    </div>
+  </div>
+
+  <script src="../storage.js"></script>
+  <script src="../scoring.js"></script>
+  <script src="../data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
