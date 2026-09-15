@@ -32,7 +32,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   width: 600px;
@@ -67,7 +67,6 @@ body {
 .header-meta {
   font-size: 15px;
   color: var(--text-secondary);
-  font-family: 'IBM Plex Mono', monospace;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -130,7 +129,6 @@ body {
   font-size: 18px;
   font-weight: 500;
   text-align: center;
-  font-family: 'IBM Plex Mono', monospace;
 }
 .nav-item.muted-state { color: var(--text-muted); }
 .nav-item.primary { background: var(--accent-primary); color: #000; }
@@ -141,14 +139,12 @@ body {
   display: block;
   margin-bottom: 8px;
   color: var(--text-secondary);
-  font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
 }
 .text-input {
   width: 100%;
   padding: 16px 16px;
   font-size: 22px;
-  font-family: 'IBM Plex Mono', monospace;
   text-transform: uppercase;
   background: var(--bg-tertiary);
   color: var(--text-primary);
@@ -174,7 +170,6 @@ body {
 .list-item.is-muted { opacity: .45; }
 .list-item-content { flex: 1; min-width: 0; }
 .list-item-title {
-  font-family: 'IBM Plex Mono', monospace;
   font-weight: 600;
   font-size: 22px;
 }
@@ -190,7 +185,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  font-family: 'IBM Plex Mono', monospace;
   flex-shrink: 0;
   gap: 5px;
 }
@@ -207,7 +201,6 @@ body {
   font-weight: 700;
   letter-spacing: .04em;
   text-transform: uppercase;
-  font-family: 'IBM Plex Mono', monospace;
   background: var(--accent-primary);
   color: #000;
   flex-shrink: 0;
@@ -227,7 +220,6 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
-  font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
 }
 .article-source { color: var(--accent-primary); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }
