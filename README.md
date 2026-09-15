@@ -51,6 +51,14 @@ mismatches:
 | Custom ~340×380px "lens" mockup frame | Fixed 600×600dp viewport, 8dp safe margin |
 | Amber trading-terminal palette throughout | `#000000` transparent page background (mandatory — real world shows through on the additive display), visible UI surfaces in `#0a0a0f`–`#1C1E21`, **cyan focus ring is a hardware/legibility requirement, not a style choice**. Amber is kept for prices/CATALYST tags on top of that base. |
 | `window.storage` bridge for phone↔glasses sync | Plain `localStorage`, no bridge — hence the `/api/watchlist` backend described above |
+| Visible `←` back-button in screen headers | Toolkit removed the `back-btn` pattern from its templates/examples entirely (as of toolkit commit `a2714f8`/`ca5fb95`, re-audited 2026-09-15) — headers are just `<h1>`, and Escape (already wired to `navigateBack()`) is the sole back mechanism. `glasses/` updated to match. |
+
+Re-audited against the toolkit repo again on 2026-09-15 (toolkit was at
+`de9ebda` when this app was built, upstream had moved to `ca5fb95`). The
+600×600dp viewport, 8dp safe margin, header/button dimensions, and color
+system in `display-guidelines.md` are **unchanged** since this app was
+built — the only functional doc changes were the back-button removal above
+and the new "Pinch, drag, and text entry" section (see below).
 
 `data.js`, `scoring.js`, and `storage.js` are shared unmodified between both
 surfaces (`glasses/index.html` loads them via `../`) — only the UI/interaction
@@ -61,18 +69,27 @@ layer differs.
 The Add Ticker screen (`glasses/index.html`) uses a plain
 `<input type="text" class="text-input focusable">`, following the toolkit's
 own "Form Screen" pattern (`skills/add-ui/references/vanilla-patterns.md`).
-There is no separate JS API for the Neural Band's handwriting input — the
-glasses OS attaches its own text-entry modality (handwriting, dictation,
-whatever it supports) to any focused HTML text input automatically, the same
-way a phone browser's native keyboard appears for a focused `<input>`. This
-app's job is just to provide a standard, correctly-focusable input; the
-actual handwriting recognition itself isn't something testable from a
-desktop browser preview — only confirmable on the physical hardware.
+There is no SDK call needed for the Neural Band's handwriting/dictation
+input, but per the toolkit's `add-text-input` skill and the "Pinch, drag,
+and text entry" section added to `display-guidelines.md` (toolkit commits
+`de9ebda..ca5fb95`), the on-glasses **composer opens on focus + tap, not on
+focus alone**, and never via a programmatic `.focus()`. A pinch on an
+already-focused text input is consumed by the composer instead of reaching
+page JS at all — so this app's job is just to provide a standard,
+correctly-focusable, `type="text"` input; the composer itself isn't testable
+from a desktop browser preview, only confirmable on physical hardware.
 
 While the input is focused, arrow keys are left alone (so typing/cursor
 movement isn't hijacked by D-pad focus-navigation) — only Enter (submit,
 via `data-submit-action`) and Escape (cancel) are intercepted, matching the
-toolkit template's own keydown handling.
+*current* official template's keydown handler exactly (re-verified against
+toolkit commit `ca5fb95` on 2026-09-15 — this part hadn't drifted). On real
+hardware this Enter path never actually fires while the field is focused: a
+pinch on a focused text input is consumed by the on-glasses composer before
+it reaches page JS at all, so it's a keyboard-testing/fallback affordance,
+not the handwriting entry point itself. A live `input` listener clears the
+"already on watchlist" hint as soon as the composer commits (or the wearer
+types), which is the toolkit's recommended way to react to composer input.
 
 ## What's implemented
 

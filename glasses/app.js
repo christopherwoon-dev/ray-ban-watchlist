@@ -7,11 +7,15 @@
 // cloned toolkit repo).
 //
 // The Add Ticker screen uses a plain <input> (see vanilla-patterns.md's
-// "Form Screen" pattern) rather than anything custom — the glasses OS
-// attaches its own text-entry modality (Neural Band handwriting, dictation,
-// etc.) to any focused HTML text input, the same way a phone's keyboard
-// appears for a focused <input> in a mobile browser. There's no separate
-// JS API for it.
+// "Form Screen" pattern) rather than anything custom. Per display-guidelines.md
+// / add-text-input skill: a standard text input opens the on-glasses composer
+// (Neural Band handwriting, dictation) on focus + TAP — not on focus alone,
+// and never via a programmatic .focus(). A pinch on a focused text input is
+// consumed by the composer instead of reaching page JS at all, so no SDK call
+// is needed here. That also means the Enter->data-submit-action path in the
+// keydown handler below (copied from the official template) never actually
+// fires from a pinch on real hardware while this field is focused — it's a
+// keyboard-testing/fallback affordance, not the handwriting entry point.
 
 (function () {
   'use strict';
@@ -213,7 +217,7 @@
       case 'go-add-ticker': {
         var input = document.getElementById('new-ticker-input');
         input.value = '';
-        document.getElementById('add-ticker-hint').textContent = '';
+        document.getElementById('add-ticker-hint').textContent = 'Tap the field to write, dictate, or type a symbol.';
         navigateTo('add-ticker');
         break;
       }
@@ -259,10 +263,14 @@
       var active = document.activeElement;
       var isInput = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
 
-      // While a text field is focused, only Enter/Escape are intercepted —
-      // everything else (typing, and whatever native input modality the
-      // glasses OS attaches to a focused <input> — dictation, handwriting
-      // via the Neural Band, etc.) is left to the browser/OS to handle.
+      // Matches the current official template's keydown handler exactly
+      // (create-webapp/templates/app.js). While a text field is focused,
+      // only Enter/Escape are intercepted — everything else (typing) is left
+      // to the browser/OS. On real hardware a pinch on a focused text input
+      // is consumed by the on-glasses composer *before it reaches page JS at
+      // all* (see display-guidelines.md's "Pinch, drag, and text entry"),
+      // so this Enter->submitAction path is effectively a keyboard-testing/
+      // fallback affordance, not the primary handwriting/dictation flow.
       if (isInput && e.key !== 'Enter' && e.key !== 'Escape') return;
 
       switch (e.key) {
@@ -284,6 +292,11 @@
           e.preventDefault();
           break;
       }
+    });
+
+    var tickerInput = document.getElementById('new-ticker-input');
+    tickerInput.addEventListener('input', function () {
+      document.getElementById('add-ticker-hint').textContent = '';
     });
   }
 

@@ -27,7 +27,6 @@
 
     <div id="detail" class="screen hidden">
       <header class="header">
-        <button class="back-btn focusable" data-action="back">&#8592;</button>
         <h1 id="detail-ticker">—</h1>
         <span class="header-meta" id="detail-change">—</span>
       </header>
@@ -42,14 +41,13 @@
 
     <div id="add-ticker" class="screen hidden">
       <header class="header">
-        <button class="back-btn focusable" data-action="back">&#8592;</button>
         <h1>Add Ticker</h1>
       </header>
       <div class="content">
         <div class="form-field">
           <label for="new-ticker-input">Symbol</label>
           <input type="text" id="new-ticker-input" class="text-input focusable"
-                 placeholder="e.g. SNDK" maxlength="6" autocapitalize="characters"
+                 placeholder="e.g. SNDK — tap to write or speak" maxlength="6" autocapitalize="characters"
                  data-submit-action="save-ticker">
         </div>
         <div class="form-hint" id="add-ticker-hint"></div>

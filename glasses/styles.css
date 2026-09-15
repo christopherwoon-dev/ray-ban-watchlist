@@ -80,15 +80,6 @@ body {
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
-.back-btn {
-  background: transparent;
-  color: var(--text-primary);
-  font-size: 22px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  border: 2px solid transparent;
-}
-
 .content {
   flex: 1;
   padding: 16px 20px;
