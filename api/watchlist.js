@@ -58,6 +58,7 @@ module.exports = async function handler(req, res) {
       res.status(405).json({ error: 'method not allowed' });
     }
   } catch (e) {
-    res.status(502).json({ error: String((e && e.message) || e) });
+    const cause = e && e.cause ? String(e.cause.message || e.cause) : null;
+    res.status(502).json({ error: String((e && e.message) || e), cause });
   }
 };
