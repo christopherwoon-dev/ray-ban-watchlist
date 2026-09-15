@@ -94,13 +94,26 @@ def _kv_config():
 
 def _kv_request(method, path, body=None):
     url, token = _kv_config()
+    if not url.startswith('http://') and not url.startswith('https://'):
+        raise RuntimeError(f'KV_REST_API_URL missing http(s) scheme: {url!r}')
     data = body.encode() if isinstance(body, str) else body
-    req = urllib.request.Request(
-        url.rstrip('/') + path, data=data, method=method,
-        headers={'Authorization': f'Bearer {token}'},
-    )
-    with urllib.request.urlopen(req, timeout=6) as resp:
-        return json.loads(resp.read())
+    full_url = url.rstrip('/') + path
+    last_err = None
+    # Retry once with a fresh connection: urlopen has a known intermittent
+    # "[Errno 16] Device or resource busy" failure in some serverless Python
+    # runtimes tied to ssl-context/socket reuse across warm invocations —
+    # a second attempt with a brand new request typically succeeds.
+    for attempt in range(2):
+        try:
+            req = urllib.request.Request(
+                full_url, data=data, method=method,
+                headers={'Authorization': f'Bearer {token}'},
+            )
+            with urllib.request.urlopen(req, timeout=6) as resp:
+                return json.loads(resp.read())
+        except Exception as e:
+            last_err = e
+    raise RuntimeError(f'KV request to {full_url} failed after retry: {last_err}')
 
 
 def get_watchlist():

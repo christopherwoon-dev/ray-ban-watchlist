@@ -230,7 +230,10 @@
   async function addTicker() {
     var input = document.getElementById('new-ticker-input');
     var hint = document.getElementById('add-ticker-hint');
-    var raw = input.value.trim().toUpperCase();
+    // Voice dictation commonly appends trailing punctuation (e.g. "AAPL.")
+    // as sentence-ending style -- strip trailing punctuation only, so a
+    // real mid-symbol period (BRK.B) survives.
+    var raw = input.value.trim().toUpperCase().replace(/[.,!?;:]+$/, '');
     if (!raw) return;
     if (state.watchlist.some(function (w) { return w.symbol === raw; })) {
       hint.textContent = raw + ' is already on your watchlist.';
