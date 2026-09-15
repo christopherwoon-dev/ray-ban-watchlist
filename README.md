@@ -48,6 +48,21 @@ and both need pushes if you want history to match — but only pushes to the
 track down (multiple fixes were pushed to the wrong repo and never went
 live), so worth knowing before pushing again.
 
+`/api/watchlist` is now `api/watchlist.js` (Node), not `api/watchlist.py`
+(Python) — the Python version consistently threw
+`<urlopen error [Errno 16] Device or resource busy>` (and the same error
+persisted through several rewrites: `http.client` instead of `urllib`, then
+forcing IPv4). Root cause: the configured `KV_REST_API_URL` host doesn't
+resolve in public DNS at all (checked against Google's and Cloudflare's
+resolvers), even though `upstash.io` itself does — that's the signature of
+a private, Vercel-internal storage hostname only reachable from inside
+Vercel's own network fabric, and that path is far better supported from
+Vercel's Node.js runtime than from Python. The Node rewrite needs no
+dependencies (just built-in `fetch`). `api/_shared.py`'s `get_watchlist`/
+`set_watchlist`/`_kv_request` are dead code for the deployed app now but
+still used by `devserver.py` for local dev (plain local Python networking
+doesn't hit this sandbox-specific issue), so left in place.
+
 `glasses/index.html` inlines its CSS directly in a `<style>` tag rather than
 linking a separate `glasses/styles.css` (deleted 2026-09-16) — on-device
 testing showed the glasses WebView occasionally failing to load a linked
