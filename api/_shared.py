@@ -105,11 +105,18 @@ class _ForceIPv4HTTPSConnection(http.client.HTTPSConnection):
     # record first. Resolve and connect over IPv4 explicitly; keep normal
     # TLS verification against the real hostname via server_hostname.
     def connect(self):
-        addr_info = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Querying getaddrinfo with family restricted to AF_INET outright
+        # fails to resolve in this sandbox (EAI_NONAME) -- the resolver
+        # only cooperates with an unrestricted (AF_UNSPEC) query. So resolve
+        # unrestricted as usual, then pick an IPv4 result out of whatever
+        # comes back, instead of asking DNS to filter it for us.
+        addr_info = socket.getaddrinfo(self.host, self.port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        ipv4 = [ai for ai in addr_info if ai[0] == socket.AF_INET]
+        family, socktype, proto, _, sockaddr = ipv4[0] if ipv4 else addr_info[0]
+        sock = socket.socket(family, socktype, proto)
         sock.settimeout(self.timeout)
         try:
-            sock.connect(addr_info[0][4])
+            sock.connect(sockaddr)
             self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
         except Exception:
             sock.close()
