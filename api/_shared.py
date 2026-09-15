@@ -8,6 +8,7 @@
 # consistently 503s requests from Vercel's Lambda IP ranges — Yahoo's own
 # news search endpoint doesn't have that problem, so it's used for both.
 
+import http.client
 import json
 import os
 import urllib.parse
@@ -93,27 +94,31 @@ def _kv_config():
 
 
 def _kv_request(method, path, body=None):
+    # Deliberately NOT urllib.request.urlopen here (unlike _get() above,
+    # used for Yahoo Finance): the live deployment reproducibly threw
+    # "<urlopen error [Errno 16] Device or resource busy>" for this specific
+    # Upstash host on every attempt, retry included, while the same urlopen
+    # path works fine for Yahoo — so it's not a generic network/DNS issue in
+    # this runtime, and not transient. http.client.HTTPSConnection is a
+    # different code path (skips urllib.request's opener/handler layer) and
+    # is the commonly effective workaround for this exact class of bug in
+    # constrained serverless Python sandboxes.
     url, token = _kv_config()
     if not url.startswith('http://') and not url.startswith('https://'):
         raise RuntimeError(f'KV_REST_API_URL missing http(s) scheme: {url!r}')
+    parsed = urllib.parse.urlparse(url)
     data = body.encode() if isinstance(body, str) else body
-    full_url = url.rstrip('/') + path
-    last_err = None
-    # Retry once with a fresh connection: urlopen has a known intermittent
-    # "[Errno 16] Device or resource busy" failure in some serverless Python
-    # runtimes tied to ssl-context/socket reuse across warm invocations —
-    # a second attempt with a brand new request typically succeeds.
-    for attempt in range(2):
-        try:
-            req = urllib.request.Request(
-                full_url, data=data, method=method,
-                headers={'Authorization': f'Bearer {token}'},
-            )
-            with urllib.request.urlopen(req, timeout=6) as resp:
-                return json.loads(resp.read())
-        except Exception as e:
-            last_err = e
-    raise RuntimeError(f'KV request to {full_url} failed after retry: {last_err}')
+    conn_cls = http.client.HTTPSConnection if parsed.scheme == 'https' else http.client.HTTPConnection
+    conn = conn_cls(parsed.netloc, timeout=6)
+    try:
+        conn.request(method, path, body=data, headers={'Authorization': f'Bearer {token}'})
+        resp = conn.getresponse()
+        raw = resp.read()
+        if resp.status >= 400:
+            raise RuntimeError(f'KV request to {url}{path} returned {resp.status}: {raw[:200]!r}')
+        return json.loads(raw)
+    finally:
+        conn.close()
 
 
 def get_watchlist():
