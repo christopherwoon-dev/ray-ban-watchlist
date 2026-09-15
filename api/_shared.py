@@ -11,6 +11,8 @@
 import http.client
 import json
 import os
+import socket
+import ssl
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -93,23 +95,37 @@ def _kv_config():
     return url, token
 
 
+class _ForceIPv4HTTPSConnection(http.client.HTTPSConnection):
+    # Same "[Errno 16] Device or resource busy" reproduced identically with
+    # both urllib.request.urlopen AND plain http.client.HTTPSConnection for
+    # this one Upstash host (while Yahoo Finance HTTPS calls never show it),
+    # which rules out both libraries' own code and points at the socket
+    # connect step itself — the classic signature of a serverless sandbox
+    # with broken/unroutable IPv6 whose resolver still returns an AAAA
+    # record first. Resolve and connect over IPv4 explicitly; keep normal
+    # TLS verification against the real hostname via server_hostname.
+    def connect(self):
+        addr_info = socket.getaddrinfo(self.host, self.port, socket.AF_INET, socket.SOCK_STREAM)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(self.timeout)
+        try:
+            sock.connect(addr_info[0][4])
+            self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+        except Exception:
+            sock.close()
+            raise
+
+
 def _kv_request(method, path, body=None):
-    # Deliberately NOT urllib.request.urlopen here (unlike _get() above,
-    # used for Yahoo Finance): the live deployment reproducibly threw
-    # "<urlopen error [Errno 16] Device or resource busy>" for this specific
-    # Upstash host on every attempt, retry included, while the same urlopen
-    # path works fine for Yahoo — so it's not a generic network/DNS issue in
-    # this runtime, and not transient. http.client.HTTPSConnection is a
-    # different code path (skips urllib.request's opener/handler layer) and
-    # is the commonly effective workaround for this exact class of bug in
-    # constrained serverless Python sandboxes.
     url, token = _kv_config()
     if not url.startswith('http://') and not url.startswith('https://'):
         raise RuntimeError(f'KV_REST_API_URL missing http(s) scheme: {url!r}')
     parsed = urllib.parse.urlparse(url)
     data = body.encode() if isinstance(body, str) else body
-    conn_cls = http.client.HTTPSConnection if parsed.scheme == 'https' else http.client.HTTPConnection
-    conn = conn_cls(parsed.netloc, timeout=6)
+    if parsed.scheme == 'https':
+        conn = _ForceIPv4HTTPSConnection(parsed.hostname, parsed.port or 443, timeout=6)
+    else:
+        conn = http.client.HTTPConnection(parsed.hostname, parsed.port or 80, timeout=6)
     try:
         conn.request(method, path, body=data, headers={'Authorization': f'Bearer {token}'})
         resp = conn.getresponse()
