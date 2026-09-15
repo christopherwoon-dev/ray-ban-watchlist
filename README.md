@@ -38,6 +38,28 @@ To test the real watchlist sync locally (optional): copy `.env.local.example`
 to `.env.local` and fill in `KV_REST_API_URL`/`KV_REST_API_TOKEN` from your
 Vercel project's Environment Variables page.
 
+## Deployment note (2026-09-16)
+
+`ray-ban-watchlist.vercel.app` (the Vercel project) is Git-connected to
+**`christopherwoon-dev/ray-ban-watchlist`** (a private repo under a second
+GitHub account), not `christopherwoon/ray-ban-watchlist`. Both repos exist
+and both need pushes if you want history to match — but only pushes to the
+`christopherwoon-dev` one actually trigger a deploy. This cost real time to
+track down (multiple fixes were pushed to the wrong repo and never went
+live), so worth knowing before pushing again.
+
+`glasses/index.html` inlines its CSS directly in a `<style>` tag rather than
+linking a separate `glasses/styles.css` (deleted 2026-09-16) — on-device
+testing showed the glasses WebView occasionally failing to load a linked
+stylesheet while `index.html` and the JS files loaded fine, which leaves
+every `.screen` visible at once with default browser styling (tiny fonts,
+default `<input>`/`<button>` borders) since the `.hidden`/`.screen` rules
+that hide and position screens never apply — this reads as "wrong screen
+launches" and "can't navigate back," not obviously a missing-stylesheet
+issue. Inlining removes the second network request entirely. If you edit
+styles, edit the `<style>` block in `glasses/index.html` directly — there's
+no longer a separate CSS file for glasses to keep in sync.
+
 ## Toolkit compliance
 
 `glasses/` was rebuilt against the actual toolkit template

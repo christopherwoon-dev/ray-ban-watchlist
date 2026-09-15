@@ -6,7 +6,276 @@
   <meta name="description" content="Stock watchlist for Meta Ray-Ban Display glasses — add, remove, mute, and view catalyst headlines.">
   <meta name="mrbd-web-app-capable" content="yes">
   <title>Watchlist</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+/* Inlined from styles.css (kept in sync manually) so rendering never depends
+   on a second network request succeeding — a separate <link> stylesheet
+   failing to load on-device (while index.html itself loads fine) leaves
+   every screen visible at once with default browser styling, since the
+   .hidden/.screen rules that hide/position screens never apply. */
+:root {
+  --bg-primary: #000000;   /* transparent on additive display — must stay pure black, do not change */
+  /* Surface colors brightened well past the toolkit template's defaults —
+     on an additive waveguide display, darker = more transparent/invisible,
+     so near-black surfaces (#0a0a0f/#14141f) read as washed out no matter
+     how bright the display itself is set. These need real luminance to be
+     legible at all, not just aesthetic contrast. */
+  --bg-secondary: #24262e;
+  --bg-tertiary: #34363f;
+  --bg-card: #3d3f4c;
+  --text-primary: #ffffff;
+  --text-secondary: #d5d6dd;
+  --text-muted: #9698a3;
+  --accent-primary: #FFB300;      /* brand amber — prices, CATALYST tag */
+  --focus-ring: #00d4ff;           /* mandated cyan focus glow, do not change */
+  --focus-glow: rgba(0, 212, 255, 0.55);
+  --green: #4eeb9c;
+  --red: #ff7a7a;
+  --danger: #ff4466;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  width: 600px;
+  height: 600px;
+  overflow: hidden;
+}
+
+#app { width: 100%; height: 100%; position: relative; }
+
+.screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 8px; /* 8dp safe margin */
+}
+.screen.hidden { display: none; }
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  gap: 12px;
+  flex-shrink: 0;
+}
+.header h1 { font-size: 26px; font-weight: 600; flex: 1; }
+.header-meta {
+  font-size: 15px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-primary);
+  box-shadow: 0 0 6px var(--accent-primary);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.content {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+
+/* Scrim: signals more content exists below the fold */
+.content::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 48px;
+  background: linear-gradient(to top, var(--bg-primary) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.focusable {
+  transition: transform 475ms cubic-bezier(0.6, 0, 0.4, 1), border-color 300ms, box-shadow 300ms;
+  border: 2px solid transparent;
+  cursor: pointer;
+  min-height: 44px;
+}
+.focusable:focus {
+  outline: none;
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 20px var(--focus-glow);
+  transform: scale(0.91); /* container-only scale on focus, per spec */
+}
+
+.nav-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+.nav-item {
+  flex: 1;
+  padding: 16px 16px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+}
+.nav-item.muted-state { color: var(--text-muted); }
+.nav-item.primary { background: var(--accent-primary); color: #000; }
+.nav-item.danger { background: var(--danger); color: #fff; }
+
+.form-field { margin-bottom: 16px; }
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.text-input {
+  width: 100%;
+  padding: 16px 16px;
+  font-size: 22px;
+  text-transform: uppercase;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+}
+.text-input::placeholder { color: var(--text-muted); text-transform: none; }
+.form-hint {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-height: 18px;
+}
+
+.list-container { display: flex; flex-direction: column; gap: 10px; }
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 20px 18px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  gap: 14px;
+}
+.list-item.is-muted { opacity: .45; }
+.list-item-content { flex: 1; min-width: 0; }
+.list-item-title {
+  font-weight: 600;
+  font-size: 22px;
+}
+.list-item-meta {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.list-item-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 5px;
+}
+.list-item-price { font-size: 19px; }
+.list-item-change { font-size: 16px; font-weight: 600; }
+.change-up { color: var(--green); }
+.change-down { color: var(--red); }
+
+.badge {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  background: var(--accent-primary);
+  color: #000;
+  flex-shrink: 0;
+}
+
+.article-list { display: flex; flex-direction: column; gap: 10px; }
+.article {
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+}
+/* Top-ranked article is distinguished by a label, not a border — a colored
+   border reads as a focus/selection state and confused users into thinking
+   the (non-interactive) article card was clickable. */
+.article-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.article-source { color: var(--accent-primary); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }
+.article-time { color: var(--text-secondary); }
+.article-text { font-size: 17px; line-height: 1.4; color: var(--text-primary); }
+.top-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  background: var(--accent-primary);
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+  background: var(--bg-primary);
+}
+.loading-spinner {
+  width: 40px; height: 40px;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--text-secondary); }
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 20px;
+}
+
+.hidden { display: none !important; }
+  </style>
 </head>
 <body>
   <div id="app">
